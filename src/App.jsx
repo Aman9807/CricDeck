@@ -15,12 +15,22 @@ import {
   saveSupabaseCredentials, 
   resetSupabaseClient 
 } from './supabaseClient';
+import { 
+  auth, 
+  googleProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
+} from './firebase';
 import OverlayEditor from './OverlayEditor';
 import BroadcastView from './BroadcastView';
 import MatchCenter from './MatchCenter';
 import LandingPage from './LandingPage';
 import TournamentSetup from './TournamentSetup';
 import TournamentDashboard from './TournamentDashboard';
+
 
 const INITIAL_MATCH_STATE = {
   team_a: 'Team A',
@@ -52,6 +62,13 @@ const INITIAL_MATCH_STATE = {
 };
 
 function App() {
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login'); // login or register
+  const [authError, setAuthError] = useState('');
+
   const [matchState, setMatchState] = useState(null);
   const [showSetup, setShowSetup] = useState(true);
   const [dbConfig, setDbConfig] = useState({ url: '', key: '', matchId: '' });
@@ -114,6 +131,62 @@ function App() {
 
   // New bowler modal state
   const [nextBowlerName, setNextBowlerName] = useState('');
+
+  // Firebase Auth state listener and handlers
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    setAuthError('');
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      console.error(e);
+      if (e.code === 'auth/popup-closed-by-user') {
+        setAuthError('Google sign-in was cancelled.');
+      } else {
+        setAuthError(e.message || 'Google sign-in failed');
+      }
+    }
+  };
+
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    try {
+      if (authMode === 'login') {
+        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+      } else {
+        await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+      }
+      setAuthEmail('');
+      setAuthPassword('');
+    } catch (err) {
+      console.error(err);
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+        setAuthError("Invalid email or password. Please try again.");
+      } else if (err.code === "auth/weak-password") {
+        setAuthError("Password should be at least 6 characters.");
+      } else if (err.code === "auth/email-already-in-use") {
+        setAuthError("An account with this email already exists.");
+      } else {
+        setAuthError(err.message || "Authentication failed.");
+      }
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Load state and DB settings on mount
   useEffect(() => {
@@ -825,6 +898,28 @@ function App() {
     </div>
   );
 
+  const renderUserProfile = () => {
+    if (!authUser) return null;
+    return (
+      <>
+        <div className="user-profile-badge">
+          {authUser.photoURL ? (
+            <img src={authUser.photoURL} alt="Avatar" className="user-avatar" />
+          ) : (
+            <div className="user-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary)', color: '#000', fontSize: '0.8rem', fontWeight: 'bold' }}>
+              {authUser.email ? authUser.email.substring(0, 2).toUpperCase() : 'SC'}
+            </div>
+          )}
+          <div className="user-info">
+            <span className="user-name">{authUser.displayName || 'Scorer'}</span>
+            <span className="user-email">{authUser.email}</span>
+          </div>
+        </div>
+        <button type="button" className="btn-signout" onClick={handleSignOut}>Sign Out</button>
+      </>
+    );
+  };
+
   // Broadcaster check short circuit
   if (isBroadcast) {
     return <BroadcastView />;
@@ -833,6 +928,99 @@ function App() {
   // Spectator check short circuit
   if (isViewer) {
     return <MatchCenter />;
+  }
+
+  // Loading screen for auth state check
+  if (authLoading) {
+    return (
+      <div className="auth-gate-container" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Initializing Flynx Session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth gate check
+  if (!authUser) {
+    return (
+      <div className="auth-gate-container">
+        <div className="auth-card glass-panel">
+          <img src="/logo.svg" alt="CricDeck Logo" className="auth-logo" />
+          <h2 className="auth-title">CricDeck</h2>
+          <p className="auth-subtitle">Live Scoring & Tournament Manager</p>
+
+          {authError && (
+            <div className="auth-error">
+              {authError}
+            </div>
+          )}
+
+          {/* Google Login Button */}
+          <button 
+            type="button" 
+            className="auth-btn-google" 
+            onClick={handleGoogleSignIn}
+          >
+            <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          <div className="auth-divider">or sign in with email</div>
+
+          <div className="auth-tabs">
+            <button 
+              type="button" 
+              className={`auth-tab-btn ${authMode === 'login' ? 'active' : ''}`}
+              onClick={() => { setAuthMode('login'); setAuthError(''); }}
+            >
+              Sign In
+            </button>
+            <button 
+              type="button" 
+              className={`auth-tab-btn ${authMode === 'register' ? 'active' : ''}`}
+              onClick={() => { setAuthMode('register'); setAuthError(''); }}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <form className="auth-form" onSubmit={handleEmailSubmit}>
+            <div className="auth-input-group">
+              <label>Email Address</label>
+              <input 
+                type="email" 
+                className="auth-input" 
+                required 
+                placeholder="email@example.com"
+                value={authEmail}
+                onChange={e => setAuthEmail(e.target.value)}
+              />
+            </div>
+            <div className="auth-input-group">
+              <label>Password</label>
+              <input 
+                type="password" 
+                className="auth-input" 
+                required 
+                placeholder="••••••••"
+                value={authPassword}
+                onChange={e => setAuthPassword(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="auth-submit-btn">
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   // Route Views
@@ -847,6 +1035,7 @@ function App() {
           </div>
 
           <div className="header-actions">
+            {renderUserProfile()}
             <div 
               className="status-badge"
               onClick={() => setShowSettingsModal(true)}
@@ -882,6 +1071,10 @@ function App() {
             <Trophy className="brand-icon" size={28} />
             <h1>CricDeck</h1>
           </div>
+
+          <div className="header-actions">
+            {renderUserProfile()}
+          </div>
         </header>
 
         <TournamentSetup 
@@ -903,6 +1096,7 @@ function App() {
           </div>
 
           <div className="header-actions">
+            {renderUserProfile()}
             <div 
               className="status-badge"
               onClick={() => setShowSettingsModal(true)}
@@ -989,6 +1183,7 @@ function App() {
           </nav>
 
           <div className="header-actions">
+            {renderUserProfile()}
             <div 
               className="status-badge"
               onClick={() => setShowSettingsModal(true)}
