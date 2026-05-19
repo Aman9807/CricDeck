@@ -1,0 +1,17 @@
+Style & Conceptual Prompt for CricDeck Live Overlay
+Goal: Generate a comprehensive visual identity for a modern live cricket broadcast overlay system named CricDeck. The aesthetic must be inspired by the premium, high-octane feel of the ICC World Cup 2023, while adding next-generation, aggressive animations and elegant interactive elements.
+Aesthetics and Theme (ICC World Cup 2023 Inspired):
+The overall feel must be futuristic, premium, and glassmorphic. Utilize a color palette of deep magenta, electric cyan, navy blue, and rich gold accents. Panels should look like translucent, frosted glass with subtle internal glowing borders. Incorporate geometric patterns that feel like fragmented crystal or abstract cricket ground angles in the background textures of the panels. Typography must be bold, modern, sans-serif, and highly legible.
+Core Component: The Interactive Scorecard (Bottom Bar):
+Design a minimalist yet feature-packed bottom-third bar. The team names should have subtle, moving gradient textures. When a run is added, the number does not just blink; it performs a smooth "spin-cycle" animation, settling into a vibrant glow before fading back to white. Include dynamic icon elements like a glowing flame next to the striker's name to indicate 'On Fire' (high strike rate) or a target icon when chasing a score. The boundary count (4s and 6s) should pop out with a gold burst animation when updated.
+Core Component: Batter & Bowler Stat Cards:
+These components appear contextually at the end of overs or when a new player arrives. They should glide in smoothly from the side, utilizing a "liquid motion" transition where the panel seems to flow into shape. Batter stats (like strike rate and percentage of runs scored in boundaries) should visualize dynamically as animated radial progress bars. Bowler stats (overs, runs conceded, wickets) should appear with a metallic luster effect.
+The "This Over" 6-Ball Tracker (Key Innovative Feature):
+A small bar at the very bottom of the scorecard showing six translucent pods. As a ball is completed, the pod fills with a color: green for a 4, a vibrant gold pulse for a 6, and a dramatic red screen shake with particle effects for a wicket. For a dot ball, the pod fills with a neutral gray. When the over is complete, the entire bar sweeps left with a wind-blur effect.
+Critical Broadcast Animations (Aggressive and Elegant):
+This is crucial. The overlay must feature the following full-screen dynamic animations:
+Wicket Animation: When a wicket falls, the scorecard breaks into dark red crystal fragments. A large, dark text overlay appears with the word "OUT" in a metallic font, while neon red smoke fills the screen.
+Boundary (4 or 6) Animation: For a four, elegant cyan particle trails wrap around the score, and the text "FOUR" materializes with a neon glow. For a six, the screen must pulse with a golden energy surge, with sparks flying everywhere, and the word "SIX" shatters onto the screen from above.
+Fifty / Hundred Milestones: A gold curtain materializes with the text "CRICDECK MILESTONE", particle trails celebrate, and the batter’s photo is framed in a glowing aura.
+Context and Presentation:
+The entire overlay system must look as though it can be rendered on a transparent background for seamless integration as a browser source in OBS or other broadcasting software. The text elements should always feel sharp and futuristic, with subtle number counting animations whenever a value changes.

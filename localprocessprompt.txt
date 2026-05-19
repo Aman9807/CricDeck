@@ -1,0 +1,45 @@
+Role: Expert Full-Stack Developer specializing in Local-First Architecture and Supabase.
+Task: Build a comprehensive, offline-capable Cricket Tournament Management and Live Scoring Web Application.
+
+Please build this application by implementing the modules and strict architectural rules outlined below.
+
+1. Architectural Constraints: Local Processing + Supabase Backend
+
+Local Calculation Engine: All business logic, ICC-standard statistics, and state management must run on the client's local hardware (browser engine). Supabase is strictly for storage and syncing; it should not be used to calculate strike rates, run rates, or dynamic scores. The UI must react instantly (0ms) to user input.
+
+Local State Management: Keep the active match state in local memory or an in-browser database (like IndexedDB) to ensure the scorer can continue working seamlessly even if the internet drops.
+
+Supabase Realtime (Live Broadcasting): Utilize Supabase Realtime channels. When the scorer clicks a run, the local engine calculates the new state and immediately broadcasts a lightweight JSON payload via Supabase Realtime. This ensures spectators and live OBS broadcast overlays receive millisecond-accurate updates.
+
+Supabase Database & Storage: Sync the final match states and tournament data to Supabase PostgreSQL. Team logos and player profile pictures must be uploaded to Supabase Storage, fetching the URLs to display in the UI.
+
+2. Landing Page & Tournament Setup Module
+
+Dashboard UI: Create a visually stunning, responsive landing page displaying active tournaments, recent results, and a "Start New Tournament" portal.
+
+Team & Player Onboarding: Build a setup interface where users can create teams, upload team logos (to Supabase Storage), and build player rosters.
+
+Media Handling: Include upload fields for individual player profile pictures.
+
+3. Live Match & Intelligent Scoring Interface
+
+Smart Roster Selectors: Implement intelligent dropdown menus for selecting the current batters (striker/non-striker) and bowler.
+
+Constraint: Strict filtering logic must ensure players from the batting team cannot be selected as bowlers, and vice-versa.
+
+Granular Scoring Keypad: Do not use a generic "+1 Run" counter. Build a comprehensive cricket scoring keypad with dedicated buttons: 0, 1, 2, 3, 4, 6, and Wicket.
+
+Extras & Overthrows: Include separate selectors for extras (Wide, No Ball, Byes, Leg Byes) combined with a mechanism to add overthrow runs to those extras (e.g., Wide + 4 runs).
+
+4. Advanced Statistical & Analytics Engine (ICC Standard)
+The local engine must automatically compute everything an official ICC tournament organizer tracks:
+
+Team Metrics: Total runs, wickets fallen, current run rate (CRR), required run rate (RRR), and Net Run Rate (NRR).
+
+Player Metrics: Live batter strike rates, bowler economy rates, most wickets taken, and highest number of boundary 4s and 6s.
+
+Algorithmic Award Suggestions:
+
+Player of the Match: Calculate a dynamic impact score locally at the end of the game based on runs, strike rate, wickets, and economy to automatically suggest the Man of the Match.
+
+Player of the Tournament: Aggregate these impact scores across the database to suggest the tournament MVP.

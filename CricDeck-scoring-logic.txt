@@ -1,0 +1,61 @@
+​CricDeck: Core Scoring Logic & State Management Rulebook
+​This document defines exactly how every delivery outcome affects the match state, team score, batter statistics, and bowler statistics.
+​1. Legal Deliveries (Runs off the Bat)
+​These are standard deliveries where no penalties or extras occur.
+​Dot Ball (0 runs)
+​Team: +0 runs.
+​Batter: +0 runs, +1 ball faced.
+​Bowler: +0 runs, +1 legal ball bowled.
+​Strike: No change.
+​Runs Scored (1, 2, 3, 4, 6)
+​Team: +N runs.
+​Batter: +N runs, +1 ball faced.
+​Bowler: +N runs, +1 legal ball bowled.
+​Strike Rotation: Swap strikers if the runs scored are an odd number (1 or 3). (Note: If it is the last ball of the over, the strike swaps again).
+​2. Extras Logic (Wides, No-Balls, Byes, Leg Byes)
+​Extras affect the team score but have specific rules for individual player stats.
+​Wide (Wd)
+​Team: +1 run (Extras: Wide).
+​Batter: +0 runs, +0 balls faced.
+​Bowler: +1 run, +0 legal balls bowled (must bowl it again).
+​If batters run on a Wide: Team gets 1 + N runs (all recorded as Wides). Bowler gets 1 + N runs added to their figures. Strike rotates on odd runs.
+​No-Ball (NB)
+​Team: +1 run (Extras: No-Ball).
+​Batter: +0 runs, +1 ball faced.
+​Bowler: +1 run, +0 legal balls bowled (must bowl it again).
+​If batter hits the No-Ball for runs (e.g., hits a 4): Team gets 1 NB Extra + 4 Batting runs. Batter gets +4 runs. Bowler gets +5 runs against their figures.
+​If batters run without hitting it (Byes/Leg Byes on NB): Team gets 1 NB Extra + N Byes/Leg Byes. Batter gets 0 runs. Bowler gets +1 run (for the NB, but not penalized for the byes).
+​Byes (B) and Leg Byes (LB)
+​Team: +N runs (Extras: Byes or Leg Byes).
+​Batter: +0 runs, +1 ball faced.
+​Bowler: +0 runs, +1 legal ball bowled. (Bowlers are not penalized for Byes/Leg Byes).
+​Strike Rotation: Swap strikers on odd runs.
+​3. Wicket Logic
+​How dismissals affect the score and who takes strike.
+​Bowled, LBW, Stumped
+​Team: +0 runs, +1 Wicket.
+​Batter: Dismissed, +1 ball faced.
+​Bowler: +0 runs, +1 legal ball bowled, +1 Wicket.
+​New Batter: Takes strike.
+​Caught
+​Team: +0 runs, +1 Wicket.
+​Batter: Dismissed, +1 ball faced.
+​Bowler: +0 runs, +1 legal ball bowled, +1 Wicket.
+​New Batter: Always takes strike (per the MCC 2022 rule update), regardless of whether the batters crossed while the ball was in the air.
+​Run Out
+​Team: +N runs (any runs completed before the run out), +1 Wicket.
+​Batter: Dismissed (whoever is short of their crease), +1 ball faced (for the striker).
+​Bowler: +N runs (if off the bat), +1 legal ball bowled, +0 Wickets (Run Outs do not credit the bowler).
+​4. End of Over Logic
+​Triggered exactly when the bowler reaches 6 legal deliveries.
+​Strike Rotation: The non-striker automatically becomes the striker.
+​Bowler Change: The current bowler cannot be selected to bowl the next over.
+​Maiden Over Check: If the bowler conceded 0 runs off the bat or wide/no-ball penalties in those 6 balls (Byes/Leg Byes do not count against the bowler), record +1 Maiden Over for the bowler.
+​5. Rare Edge Cases (For 100% Accuracy)
+​Overthrows: If fielders throw the ball and it results in extra runs, those runs are added to the batter's score (if they originally hit the ball) or to the specific Extra (if it was Byes/Leg Byes).
+​Helmet Penalty (5 Penalty Runs): If the ball strikes a fielding team's helmet placed on the ground, 5 penalty runs are instantly awarded to the batting team. No balls are added to the batter or bowler.
+​Run Out on a Wide / No-Ball:
+​Team gets +1 run for the Wide/NB, +1 Wicket for the Run Out.
+​Bowler gets +1 run against their figures, +0 legal balls bowled, +0 Wickets.
+​The delivery must still be re-bowled.
+​Free Hit: Triggered on the ball following any No-Ball. The batter can only be dismissed by Run Out, Hit the Ball Twice, or Obstructing the Field. Standard scoring applies otherwise.

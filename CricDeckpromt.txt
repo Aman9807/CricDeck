@@ -1,0 +1,43 @@
+System Role & Context
+You are an expert full-stack software architect. We are building a web-based cricket scoring and live-broadcasting application. Our backend is Supabase. We are utilizing its Free Tier. You must leverage Supabase Realtime for live score updates and Supabase Storage for user-uploaded graphic overlays. Please read the entire specification below. Do not generate the entire application at once. Wait for my instructions on which module to build first.
+Phase 1: Supabase Database Schema & RLS
+Design the Postgres SQL schema for the following tables. Ensure Row Level Security (RLS) policies are defined so public users can read scores, but only authenticated match owners can update them.
+matches: Match ID, Team A, Team B, Toss Winner, Elected to (Bat/Bowl), Current Innings.
+live_scores: Total Runs, Wickets, Current Over, Run Rate, Striker stats, Non-Striker stats, Current Bowler stats.
+ball_by_ball: A ledger of every delivery to serve as an Undo Stack and to render the 6-Ball Over timeline.
+
+Phase 2: The Scorer Dashboard (Mobile-Optimized)
+This is the tactile interface used by the person scoring the match.
+Primary Inputs: Quick-tap buttons for Runs (0-6), Wicket, Wide, and No-Ball.
+Complex Delivery Logic: When Wide or No-Ball is pressed, trigger a secondary prompt for additional runs.
+Supabase Sync: Every tap must push a new record to the ball_by_ball table and update the live_scores table.
+
+Phase 3: Drag-and-Drop Overlay Editor (Supabase Storage)
+This is a web-based customization tool for local broadcasters.
+Background Upload: Users upload a custom 1920x1080 transparent PNG background directly to a Supabase Storage bucket.
+Draggable Widgets: Draggable UI components for: Team Scores, Active Batters, Current Bowler, and the 6-Ball Over timeline.
+Coordinate Saving: Capture the X/Y coordinates, scale, and font settings of each dropped widget and save this layout as a JSON object in a custom_layouts Supabase table.
+
+Phase 4: OBS Broadcast View & Supabase Realtime
+The public URL for the broadcast.
+Transparent Canvas: The background must be completely transparent to act as an OBS Browser Source.
+Layout Rendering: Fetch the JSON layout from Supabase and render the widgets exactly at the saved coordinates over the user's Storage bucket image.
+Real-Time Sync: Listen to the live_scores table. When the scorer taps a button in Phase 2, this view must animate the updated score instantly.
+Execution Instructions for AI:
+Acknowledge this prompt and summarize your understanding of the Supabase architecture.
+Ask me which frontend framework I want to use.
+Wait for my command before writing the Phase 1 SQL schema.
+phase 5
+System Role & Context
+You are an expert cricket statistician and software logic architect. We are building a live cricket scoring and broadcasting app called CricDeck. I need you to write the definitive "Scoring Logic Rulebook" for the app. This rulebook will be used to write our state management code, so it needs to be mathematically precise about how every single event affects the team score, the batter's stats, and the bowler's stats.
+Core Task
+List every possible delivery outcome in cricket and map exactly what variables need to update. You must include complex edge cases. For example, your logic must explicitly state things like: A No-Ball adds 1 penalty run to the team and does not count as a legal ball in the over, but it DOES count as a ball faced by the striker. If the batter hits the No-Ball with their bat, those runs go to the batter. Conversely, a Wide adds 1 penalty run and does not count as a legal ball, but it does NOT count as a ball faced by the batter.
+Required Sections to Cover:
+Legal Deliveries: Runs off the bat (0, 1, 2, 3, 4, 6) and how strike rotates.
+Extras Logic: Wides, No-Balls (front foot and height), Byes, and Leg Byes. Explain exactly who gets the runs (batter vs extras) and who gets the balls counted against them.
+Wicket Logic: Bowled, Caught, LBW, Stumped, and Run Out. Include edge cases like who takes strike after a caught out (based on new rules) vs a run out.
+End of Over Logic: Strike rotation and bowler changes.
+Search and Verify Instruction
+After listing the standard rules and the edge cases I mentioned, I want you to search your knowledge base for any obscure cricket scoring rules we might have missed (for example: overthrows, penalty runs for hitting a helmet on the field, or run-outs on a Wide/No-Ball). Include these in a "Rare Edge Cases" section so our app CricDeck is 100% accurate for professional scorers.
+Execution
+Do not write any actual code yet. Just provide the comprehensive scoring logic document.
