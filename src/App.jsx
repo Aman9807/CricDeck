@@ -1378,7 +1378,7 @@ function App() {
                   </div>
                   <div className="runrate-display">
                     <span className="rr-label">Run Rate</span>
-                    <span className="rr-value">{matchState.run_rate.toFixed(2)}</span>
+                    <span className="rr-value">{(matchState.run_rate || 0).toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="match-meta-bar">
@@ -1550,8 +1550,8 @@ function App() {
                   <div className="grid-extras">
                     <button className="btn-extras" onClick={() => handleExtrasClick('WIDE')}>WIDE</button>
                     <button className="btn-extras" onClick={() => handleExtrasClick('NO_BALL')}>NO BALL</button>
-                    <button className="btn-extras" onClick={() => applyAction({ type: 'BYES', runsCompleted: 1 })}>1 BYE</button>
-                    <button className="btn-extras" onClick={() => applyAction({ type: 'LEG_BYES', runsCompleted: 1 })}>1 LEG BYE</button>
+                    <button className="btn-extras" onClick={() => applyAction({ type: 'BYES', value: 1 })}>1 BYE</button>
+                    <button className="btn-extras" onClick={() => applyAction({ type: 'LEG_BYES', value: 1 })}>1 LEG BYE</button>
                   </div>
                 </div>
 

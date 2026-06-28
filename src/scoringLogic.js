@@ -119,7 +119,7 @@ export function processDelivery(state, action) {
 
     case 'BYES':
     case 'LEG_BYES': {
-      const runs = action.value;
+      const runs = action.value !== undefined ? action.value : (action.runsCompleted !== undefined ? action.runsCompleted : 0);
       extrasAdded = runs;
       runsAdded = runs;
       isLegal = true;
