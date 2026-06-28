@@ -323,6 +323,12 @@ body {
   cursor: pointer;
 }
 
+.select-control option,
+select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
 /* Scorecard Header Panel */
 .scorecard-panel {
   padding: 2rem;
