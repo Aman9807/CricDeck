@@ -786,10 +786,12 @@ function App() {
 
     // Save Supabase config
     const creds = getSupabaseCredentials();
-    saveSupabaseCredentials({
+    const updatedConfig = {
       ...creds,
       matchId: preMatchConfigMatch.id
-    });
+    };
+    saveSupabaseCredentials(updatedConfig);
+    setDbConfig(updatedConfig);
   };
 
   // Start scoring scheduled match
@@ -801,6 +803,16 @@ function App() {
       const savedMatchDetails = localStorage.getItem(`cricdeck_match_${match.id}`);
       if (savedMatchDetails) {
         setMatchState(JSON.parse(savedMatchDetails));
+        
+        // Update Supabase matchId configuration on resume
+        const creds = getSupabaseCredentials();
+        const updatedConfig = {
+          ...creds,
+          matchId: match.id
+        };
+        saveSupabaseCredentials(updatedConfig);
+        setDbConfig(updatedConfig);
+        
         setViewRoute('scorer');
         return;
       }
@@ -841,6 +853,7 @@ function App() {
   };
 
   const isSupabaseConfigured = dbConfig.url && dbConfig.key && dbConfig.matchId;
+  const isSupabaseReady = dbConfig.url && dbConfig.key;
 
   const renderSettingsModal = () => (
     <div className="modal-overlay">
@@ -1041,8 +1054,8 @@ function App() {
               onClick={() => setShowSettingsModal(true)}
               title="Click to configure Supabase"
             >
-              <span className={`status-dot ${isSupabaseConfigured ? 'online' : 'offline'}`} />
-              <span>{isSupabaseConfigured ? 'Sync Live' : 'Local Mock'}</span>
+              <span className={`status-dot ${isSupabaseReady ? 'online' : 'offline'}`} />
+              <span>{isSupabaseReady ? (dbConfig.matchId ? 'Sync Live' : 'Sync Ready') : 'Local Mock'}</span>
               <Settings size={16} style={{ marginLeft: '0.25rem' }} />
             </div>
           </div>
@@ -1102,8 +1115,8 @@ function App() {
               onClick={() => setShowSettingsModal(true)}
               title="Click to configure Supabase"
             >
-              <span className={`status-dot ${isSupabaseConfigured ? 'online' : 'offline'}`} />
-              <span>{isSupabaseConfigured ? 'Sync Live' : 'Local Mock'}</span>
+              <span className={`status-dot ${isSupabaseReady ? 'online' : 'offline'}`} />
+              <span>{isSupabaseReady ? (dbConfig.matchId ? 'Sync Live' : 'Sync Ready') : 'Local Mock'}</span>
               <Settings size={16} style={{ marginLeft: '0.25rem' }} />
             </div>
           </div>
@@ -1122,6 +1135,153 @@ function App() {
         )}
 
         {showSettingsModal && renderSettingsModal()}
+
+        {/* PRE-MATCH SETUP MODAL */}
+        {showPreMatchModal && (() => {
+          const { battingTeam, bowlingTeam, battingTeamPlayers, bowlingTeamPlayers } = getPreMatchTeamsInfo();
+
+          return (
+            <div className="modal-overlay">
+              <div className="modal-content" style={{ maxWidth: '550px' }}>
+                <div className="modal-header">
+                  <h3>Pre-Match Toss & Lineup Setup</h3>
+                  <button className="btn-close" onClick={() => setShowPreMatchModal(false)}>&times;</button>
+                </div>
+                
+                <form onSubmit={handlePreMatchSubmit}>
+                  <div className="modal-body">
+                    {/* Toss Winner */}
+                    <div className="form-group">
+                      <label>Who won the toss?</label>
+                      <select 
+                        className="form-control select-control"
+                        value={tossWinnerId}
+                        onChange={e => {
+                          const wId = e.target.value;
+                          setTossWinnerId(wId);
+                          // Auto reset starting players based on new batting/bowling team assignments
+                          const activeTournament = tournaments.find(t => t.id === activeTournamentId);
+                          const teamA = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_a_id);
+                          const teamB = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_b_id);
+                          
+                          let newBattingTeam, newBowlingTeam;
+                          if (wId === preMatchConfigMatch.team_a_id) {
+                            newBattingTeam = electedTo === 'Bat' ? teamA : teamB;
+                            newBowlingTeam = electedTo === 'Bat' ? teamB : teamA;
+                          } else {
+                            newBattingTeam = electedTo === 'Bat' ? teamB : teamA;
+                            newBowlingTeam = electedTo === 'Bat' ? teamA : teamB;
+                          }
+                          setPreStriker(newBattingTeam?.players[0]?.name || '');
+                          setPreNonStriker(newBattingTeam?.players[1]?.name || '');
+                          setPreBowler(newBowlingTeam?.players[0]?.name || '');
+                        }}
+                        required
+                      >
+                        <option value={preMatchConfigMatch?.team_a_id}>{preMatchConfigMatch?.team_a}</option>
+                        <option value={preMatchConfigMatch?.team_b_id}>{preMatchConfigMatch?.team_b}</option>
+                      </select>
+                    </div>
+
+                    {/* Elected To */}
+                    <div className="form-group">
+                      <label>Elected to?</label>
+                      <select 
+                        className="form-control select-control"
+                        value={electedTo}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setElectedTo(val);
+                          // Auto reset starting players
+                          const activeTournament = tournaments.find(t => t.id === activeTournamentId);
+                          const teamA = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_a_id);
+                          const teamB = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_b_id);
+                          
+                          let newBattingTeam, newBowlingTeam;
+                          if (tossWinnerId === preMatchConfigMatch.team_a_id) {
+                            newBattingTeam = val === 'Bat' ? teamA : teamB;
+                            newBowlingTeam = val === 'Bat' ? teamB : teamA;
+                          } else {
+                            newBattingTeam = val === 'Bat' ? teamB : teamA;
+                            newBowlingTeam = val === 'Bat' ? teamA : teamB;
+                          }
+                          setPreStriker(newBattingTeam?.players[0]?.name || '');
+                          setPreNonStriker(newBattingTeam?.players[1]?.name || '');
+                          setPreBowler(newBowlingTeam?.players[0]?.name || '');
+                        }}
+                        required
+                      >
+                        <option value="Bat">Bat First</option>
+                        <option value="Bowl">Bowl First</option>
+                      </select>
+                    </div>
+
+                    <h4 style={{ margin: '1.5rem 0 0.5rem 0', color: 'var(--text-light)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.25rem' }}>
+                      Opening Lineups ({battingTeam?.name} batting, {bowlingTeam?.name} bowling)
+                    </h4>
+
+                    {/* Striker */}
+                    <div className="form-group">
+                      <label>Opening Batter 1 (Striker)</label>
+                      <select 
+                        className="form-control select-control"
+                        value={preStriker}
+                        onChange={e => setPreStriker(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Select Batter --</option>
+                        {battingTeamPlayers.map(p => (
+                          <option key={p.id} value={p.name}>{p.name} ({p.role})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Non-Striker */}
+                    <div className="form-group">
+                      <label>Opening Batter 2 (Non-Striker)</label>
+                      <select 
+                        className="form-control select-control"
+                        value={preNonStriker}
+                        onChange={e => setPreNonStriker(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Select Batter --</option>
+                        {battingTeamPlayers.map(p => (
+                          <option key={p.id} value={p.name}>{p.name} ({p.role})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Bowler */}
+                    <div className="form-group">
+                      <label>Opening Bowler</label>
+                      <select 
+                        className="form-control select-control"
+                        value={preBowler}
+                        onChange={e => setPreBowler(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Select Bowler --</option>
+                        {bowlingTeamPlayers.map(p => (
+                          <option key={p.id} value={p.name}>{p.name} ({p.role})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowPreMatchModal(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Start Match
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -1189,8 +1349,8 @@ function App() {
               onClick={() => setShowSettingsModal(true)}
               title="Click to configure Supabase"
             >
-              <span className={`status-dot ${isSupabaseConfigured ? 'online' : 'offline'}`} />
-              <span>{isSupabaseConfigured ? 'Sync Live' : 'Local Mock'}</span>
+              <span className={`status-dot ${isSupabaseReady ? 'online' : 'offline'}`} />
+              <span>{isSupabaseReady ? (dbConfig.matchId ? 'Sync Live' : 'Sync Ready') : 'Local Mock'}</span>
               <Settings size={16} style={{ marginLeft: '0.25rem' }} />
             </div>
           </div>
@@ -1902,152 +2062,6 @@ function App() {
           </div>
         )}
 
-        {/* PRE-MATCH SETUP MODAL */}
-        {showPreMatchModal && (() => {
-          const { battingTeam, bowlingTeam, battingTeamPlayers, bowlingTeamPlayers } = getPreMatchTeamsInfo();
-
-          return (
-            <div className="modal-overlay">
-              <div className="modal-content" style={{ maxWidth: '550px' }}>
-                <div className="modal-header">
-                  <h3>Pre-Match Toss & Lineup Setup</h3>
-                  <button className="btn-close" onClick={() => setShowPreMatchModal(false)}>&times;</button>
-                </div>
-                
-                <form onSubmit={handlePreMatchSubmit}>
-                  <div className="modal-body">
-                    {/* Toss Winner */}
-                    <div className="form-group">
-                      <label>Who won the toss?</label>
-                      <select 
-                        className="form-control select-control"
-                        value={tossWinnerId}
-                        onChange={e => {
-                          const wId = e.target.value;
-                          setTossWinnerId(wId);
-                          // Auto reset starting players based on new batting/bowling team assignments
-                          const activeTournament = tournaments.find(t => t.id === activeTournamentId);
-                          const teamA = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_a_id);
-                          const teamB = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_b_id);
-                          
-                          let newBattingTeam, newBowlingTeam;
-                          if (wId === preMatchConfigMatch.team_a_id) {
-                            newBattingTeam = electedTo === 'Bat' ? teamA : teamB;
-                            newBowlingTeam = electedTo === 'Bat' ? teamB : teamA;
-                          } else {
-                            newBattingTeam = electedTo === 'Bat' ? teamB : teamA;
-                            newBowlingTeam = electedTo === 'Bat' ? teamA : teamB;
-                          }
-                          setPreStriker(newBattingTeam?.players[0]?.name || '');
-                          setPreNonStriker(newBattingTeam?.players[1]?.name || '');
-                          setPreBowler(newBowlingTeam?.players[0]?.name || '');
-                        }}
-                        required
-                      >
-                        <option value={preMatchConfigMatch?.team_a_id}>{preMatchConfigMatch?.team_a}</option>
-                        <option value={preMatchConfigMatch?.team_b_id}>{preMatchConfigMatch?.team_b}</option>
-                      </select>
-                    </div>
-
-                    {/* Elected To */}
-                    <div className="form-group">
-                      <label>Elected to?</label>
-                      <select 
-                        className="form-control select-control"
-                        value={electedTo}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setElectedTo(val);
-                          // Auto reset starting players
-                          const activeTournament = tournaments.find(t => t.id === activeTournamentId);
-                          const teamA = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_a_id);
-                          const teamB = activeTournament?.teams.find(t => t.id === preMatchConfigMatch.team_b_id);
-                          
-                          let newBattingTeam, newBowlingTeam;
-                          if (tossWinnerId === preMatchConfigMatch.team_a_id) {
-                            newBattingTeam = val === 'Bat' ? teamA : teamB;
-                            newBowlingTeam = val === 'Bat' ? teamB : teamA;
-                          } else {
-                            newBattingTeam = val === 'Bat' ? teamB : teamA;
-                            newBowlingTeam = val === 'Bat' ? teamA : teamB;
-                          }
-                          setPreStriker(newBattingTeam?.players[0]?.name || '');
-                          setPreNonStriker(newBattingTeam?.players[1]?.name || '');
-                          setPreBowler(newBowlingTeam?.players[0]?.name || '');
-                        }}
-                        required
-                      >
-                        <option value="Bat">Bat First</option>
-                        <option value="Bowl">Bowl First</option>
-                      </select>
-                    </div>
-
-                    <h4 style={{ margin: '1.5rem 0 0.5rem 0', color: 'var(--text-light)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.25rem' }}>
-                      Opening Lineups ({battingTeam?.name} batting, {bowlingTeam?.name} bowling)
-                    </h4>
-
-                    {/* Striker */}
-                    <div className="form-group">
-                      <label>Opening Batter 1 (Striker)</label>
-                      <select 
-                        className="form-control select-control"
-                        value={preStriker}
-                        onChange={e => setPreStriker(e.target.value)}
-                        required
-                      >
-                        <option value="">-- Select Batter --</option>
-                        {battingTeamPlayers.map(p => (
-                          <option key={p.id} value={p.name}>{p.name} ({p.role})</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Non-Striker */}
-                    <div className="form-group">
-                      <label>Opening Batter 2 (Non-Striker)</label>
-                      <select 
-                        className="form-control select-control"
-                        value={preNonStriker}
-                        onChange={e => setPreNonStriker(e.target.value)}
-                        required
-                      >
-                        <option value="">-- Select Batter --</option>
-                        {battingTeamPlayers.map(p => (
-                          <option key={p.id} value={p.name}>{p.name} ({p.role})</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Bowler */}
-                    <div className="form-group">
-                      <label>Opening Bowler</label>
-                      <select 
-                        className="form-control select-control"
-                        value={preBowler}
-                        onChange={e => setPreBowler(e.target.value)}
-                        required
-                      >
-                        <option value="">-- Select Bowler --</option>
-                        {bowlingTeamPlayers.map(p => (
-                          <option key={p.id} value={p.name}>{p.name} ({p.role})</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowPreMatchModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Start Match
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          );
-        })()}
       </div>
     );
   }

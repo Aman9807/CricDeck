@@ -9,14 +9,24 @@ export function getSupabaseCredentials() {
 }
 
 // Save credentials to localStorage
-export function saveSupabaseCredentials(url, key, matchId) {
+export function saveSupabaseCredentials(urlOrConfig, key, matchId) {
+  let url = urlOrConfig;
+  let anonKey = key;
+  let mId = matchId;
+
+  if (urlOrConfig && typeof urlOrConfig === 'object') {
+    url = urlOrConfig.url;
+    anonKey = urlOrConfig.key;
+    mId = urlOrConfig.matchId;
+  }
+
   if (url) localStorage.setItem('cricdeck_supabase_url', url);
   else localStorage.removeItem('cricdeck_supabase_url');
 
-  if (key) localStorage.setItem('cricdeck_supabase_anon_key', key);
+  if (anonKey) localStorage.setItem('cricdeck_supabase_anon_key', anonKey);
   else localStorage.removeItem('cricdeck_supabase_anon_key');
 
-  if (matchId) localStorage.setItem('cricdeck_supabase_match_id', matchId);
+  if (mId) localStorage.setItem('cricdeck_supabase_match_id', mId);
   else localStorage.removeItem('cricdeck_supabase_match_id');
 }
 
